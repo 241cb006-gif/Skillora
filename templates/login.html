@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Login | Skillora{% endblock %}
+
+{% block content %}
+<section class="container auth-wrap">
+    <div class="auth-card">
+        <h1>Welcome back</h1>
+        <form method="post">
+            {% csrf_token %}
+            {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}
+            {{ form.as_p }}
+            <button type="submit" class="button primary full-width">Login</button>
+        </form>
+        <p class="auth-link">Need an account? <a href="{% url 'register' %}">Register</a></p>
+    </div>
+</section>
+{% endblock %}

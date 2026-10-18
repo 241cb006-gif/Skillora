@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Faculty Dashboard | Skillora{% endblock %}
+
+{% block content %}
+<section class="container spaced-section">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">Faculty portal</span>
+            <h1>College oversight dashboard</h1>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card"><span>Published courses</span><strong>{{ courses.count }}</strong></div>
+        <div class="stat-card"><span>Pending certificates</span><strong>{{ pending_certificates.count }}</strong></div>
+        <div class="stat-card"><span>Enrollments</span><strong>{{ all_enrollments.count }}</strong></div>
+    </div>
+
+    <div class="two-col-layout">
+        <div class="panel">
+            <h2>Course monitoring</h2>
+            {% for course in courses %}
+                <div class="list-item">
+                    <div>
+                        <strong>{{ course.title }}</strong>
+                        <p>{{ course.instructor.get_full_name|default:course.instructor.username }} • {{ course.mode|title }}</p>
+                    </div>
+                    <span class="tag">{{ course.status|title }}</span>
+                </div>
+            {% empty %}
+                <p>No courses available.</p>
+            {% endfor %}
+        </div>
+        <div class="panel">
+            <h2>Certificate approvals</h2>
+            {% for cert in pending_certificates %}
+                <div class="list-item">
+                    <div>
+                        <strong>{{ cert.student.get_full_name|default:cert.student.username }}</strong>
+                        <p>{{ cert.course.title }}</p>
+                    </div>
+                    <a href="{% url 'review_certificate' cert.id %}">Review</a>
+                </div>
+            {% empty %}
+                <p>No pending certificate requests.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}College Administrator | Skillora{% endblock %}
+
+{% block content %}
+<section class="container spaced-section dashboard-page">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">College administrator</span>
+            <h1>Skillora oversight</h1>
+        </div>
+        <div class="button-row">
+            <a class="button secondary" href="{% url 'export_report' 'students' %}">Students CSV</a>
+            <a class="button secondary" href="{% url 'export_report' 'courses' %}">Courses CSV</a>
+            <a class="button secondary" href="{% url 'export_report' 'certificates' %}">Certificates CSV</a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card"><span>Students</span><strong>{{ student_count }}</strong></div>
+        <div class="stat-card"><span>Approved teachers</span><strong>{{ teacher_count }}</strong></div>
+        <div class="stat-card"><span>Approved courses</span><strong>{{ course_count }}</strong></div>
+        <div class="stat-card"><span>Awaiting course review</span><strong>{{ pending_course_count }}</strong></div>
+        <div class="stat-card"><span>Enrollments</span><strong>{{ enrollment_count }}</strong></div>
+    </div>
+
+    <div class="two-col-layout">
+        <section class="panel">
+            <h2>Teacher applications</h2>
+            {% for teacher in pending_teachers %}
+                <div class="list-item">
+                    <div>
+                        <strong>{{ teacher.get_full_name|default:teacher.username }}</strong>
+                        <p>{{ teacher.email }}{% if teacher.department %} · {{ teacher.department }}{% endif %}</p>
+                    </div>
+                    <form method="post" action="{% url 'approve_teacher' teacher.pk %}">
+                        {% csrf_token %}
+                        <button class="button primary" type="submit">Approve</button>
+                    </form>
+                </div>
+            {% empty %}
+                <p>No teacher applications are waiting for review.</p>
+            {% endfor %}
+        </section>
+
+        <section class="panel">
+            <h2>Courses awaiting approval</h2>
+            {% for course in pending_courses %}
+                <div class="list-item">
+                    <div>
+                        <strong>{{ course.title }}</strong>
+                        <p>{{ course.instructor.get_full_name|default:course.instructor.username }} · {{ course.mode|title }}</p>
+                        <p>{{ course.description|truncatewords:18 }}</p>
+                    </div>
+                    <div class="button-row">
+                        <form method="post" action="{% url 'review_course' course.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="decision" value="approved">
+                            <button class="button primary" type="submit">Approve</button>
+                        </form>
+                        <form method="post" action="{% url 'review_course' course.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="decision" value="rejected">
+                            <button class="button secondary" type="submit">Reject</button>
+                        </form>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No courses are waiting for review.</p>
+            {% endfor %}
+        </section>
+    </div>
+
+    <section class="panel" style="margin-top: 24px;">
+        <h2>Pending student applications</h2>
+        {% for application in pending_applications %}
+            <div class="list-item">
+                <div>
+                    <strong>{{ application.applicant_name }}</strong>
+                    <p>{{ application.course.title }} · {{ application.department.name }} · {{ application.batch.name }} · {{ application.batch.schedule }}</p>
+                    <p>{{ application.college_email }} · Teacher: {{ application.course.instructor.get_full_name|default:application.course.instructor.username }}</p>
+                </div>
+                <div class="button-row">
+                    <form method="post" action="{% url 'review_application' application.pk %}">
+                        {% csrf_token %}<input type="hidden" name="decision" value="accepted">
+                        <button class="button primary" type="submit">Accept</button>
+                    </form>
+                    <form method="post" action="{% url 'review_application' application.pk %}">
+                        {% csrf_token %}<input type="hidden" name="decision" value="rejected">
+                        <button class="button secondary" type="submit">Reject</button>
+                    </form>
+                </div>
+            </div>
+        {% empty %}
+            <p>No student applications are awaiting review.</p>
+        {% endfor %}
+    </section>
+
+    <section class="panel" style="margin-top: 24px;">
+        <h2>Certificate requests</h2>
+        {% for certificate in pending_certificates %}
+            <div class="list-item">
+                <div>
+                    <strong>{{ certificate.student.get_full_name|default:certificate.student.username }}</strong>
+                    <p>{{ certificate.course.title }} · Requested {{ certificate.requested_at|date:"M j, Y" }}</p>
+                </div>
+                <a href="{% url 'review_certificate' certificate.pk %}">Review certificate</a>
+            </div>
+        {% empty %}
+            <p>No certificate requests are waiting for review.</p>
+        {% endfor %}
+    </section>
+
+    <section class="panel" style="margin-top: 24px;">
+        <h2>Accounts</h2>
+        <form method="get" class="filter-form">
+            <input type="search" name="q" value="{{ search }}" placeholder="Search name, username, or email">
+            <select name="role">
+                <option value="">All roles</option>
+                <option value="student" {% if role_filter == 'student' %}selected{% endif %}>Students</option>
+                <option value="instructor" {% if role_filter == 'instructor' %}selected{% endif %}>Teacher applicants</option>
+                <option value="faculty" {% if role_filter == 'faculty' %}selected{% endif %}>Faculty</option>
+            </select>
+            <button class="button primary" type="submit">Filter</button>
+        </form>
+        {% for account in users %}
+            <div class="list-item">
+                <div>
+                    <strong>{{ account.get_full_name|default:account.username }}</strong>
+                    <p>{{ account.email }} · {{ account.get_role_display }} · {{ account.department|default:"No department" }}</p>
+                </div>
+                <div class="button-row">
+                    <span class="tag">{% if account.is_active %}Active{% else %}Inactive{% endif %}</span>
+                    {% if not account.is_staff and not account.is_superuser %}
+                        <form method="post" action="{% url 'toggle_user_active' account.pk %}">
+                            {% csrf_token %}
+                            <button class="button secondary" type="submit">{% if account.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <p>No accounts match your search.</p>
+        {% endfor %}
+        <nav class="pagination" aria-label="Account pages">
+            {% if users.has_previous %}<a href="?users_page={{ users.previous_page_number }}&q={{ search|urlencode }}&role={{ role_filter|urlencode }}">Previous</a>{% endif %}
+            <span>Page {{ users.number }} of {{ users.paginator.num_pages }}</span>
+            {% if users.has_next %}<a href="?users_page={{ users.next_page_number }}&q={{ search|urlencode }}&role={{ role_filter|urlencode }}">Next</a>{% endif %}
+        </nav>
+    </section>
+
+    <section class="panel" style="margin-top: 24px;">
+        <h2>Course catalogue</h2>
+        {% for course in courses %}
+            <div class="list-item">
+                <div>
+                    <strong>{{ course.title }}</strong>
+                    <p>{{ course.instructor.get_full_name|default:course.instructor.username }} · {{ course.get_approval_status_display }} · {{ course.get_status_display }}</p>
+                </div>
+                <span class="tag">{{ course.enrollments.count }} learners</span>
+            </div>
+        {% empty %}
+            <p>No courses have been submitted.</p>
+        {% endfor %}
+        <nav class="pagination" aria-label="Course pages">
+            {% if courses.has_previous %}<a href="?courses_page={{ courses.previous_page_number }}">Previous courses</a>{% endif %}
+            <span>Page {{ courses.number }} of {{ courses.paginator.num_pages }}</span>
+            {% if courses.has_next %}<a href="?courses_page={{ courses.next_page_number }}">Next courses</a>{% endif %}
+        </nav>
+    </section>
+</section>
+{% endblock %}

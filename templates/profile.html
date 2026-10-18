@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile | Skillora{% endblock %}
+
+{% block content %}
+<section class="container auth-wrap">
+    <div class="auth-card wide-form">
+        <h1>Update profile</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="button primary full-width">Save changes</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

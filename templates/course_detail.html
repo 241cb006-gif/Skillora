@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.title }} | Skillora{% endblock %}
+
+{% block content %}
+<section class="container spaced-section">
+    <div class="detail-header">
+        <div>
+            <span class="eyebrow">{{ course.mode|title }} course</span>
+            <h1>{{ course.title }}</h1>
+            <p class="muted">Taught by {{ course.instructor.get_full_name|default:course.instructor.username }}</p>
+        </div>
+        {% if user.is_authenticated and user.is_student %}
+            {% if application_status and application_status.status == 'accepted' %}
+                <span class="tag success">Application accepted</span>
+            {% elif application_status and application_status.status == 'pending' %}
+                <span class="tag">Application pending</span>
+            {% else %}
+                <a href="{% url 'apply_course' course.slug %}" class="button primary">Apply for this course</a>
+            {% endif %}
+        {% elif not user.is_authenticated %}
+            <a href="{% url 'login' %}?next={% url 'apply_course' course.slug %}" class="button primary">Login to apply</a>
+        {% endif %}
+    </div>
+
+    <div class="detail-grid">
+        <div class="panel">
+            <h2>About this course</h2>
+            <p>{{ course.description }}</p>
+            <h3>Learning objectives</h3>
+            <ul>
+                {% for objective in course.learning_objectives.splitlines %}
+                    {% if objective %}<li>{{ objective }}</li>{% endif %}
+                {% empty %}
+                    <li>Gain practical, real-world learning experience.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="panel side-panel">
+            <h2>Course details</h2>
+            <ul class="meta-list">
+                <li><strong>Skill:</strong> {{ course.skill.title }}</li>
+                {% if course.department %}<li><strong>Department:</strong> <a href="{% url 'departments' %}#{{ course.department.slug }}">{{ course.department.name }}</a></li>{% endif %}
+                <li><strong>Duration:</strong> {{ course.duration_weeks }} weeks</li>
+                <li><strong>Schedule:</strong> {{ course.schedule }}</li>
+                <li><strong>Mode:</strong> {{ course.mode|title }}</li>
+                {% if course.venue %}<li><strong>Venue:</strong> {{ course.venue }}</li>{% endif %}
+                {% if course.meeting_link %}<li><strong>Meeting link:</strong> <a href="{{ course.meeting_link }}" target="_blank">Open</a></li>{% endif %}
+                {% if course.materials_link %}<li><strong>Course resources:</strong> <a href="{{ course.materials_link }}" target="_blank">View</a></li>{% endif %}
+            </ul>
+            <a href="{% url 'request_session' %}" class="button secondary full-width">Request a learning session</a>
+        </div>
+    </div>
+
+    <section class="section">
+        <div class="section-header">
+            <h2>Available batches</h2>
+            {% if user.is_authenticated and user.is_teacher and course.instructor_id == user.id %}
+                <a href="{% url 'create_batch' course.slug %}" class="button secondary">Add a class time</a>
+            {% endif %}
+        </div>
+        <div class="card-grid three-col">
+            {% for batch in batches %}
+                <article class="course-card">
+                    <span class="badge">{{ batch.get_mode_display }}</span>
+                    <h3>{{ batch.name }}</h3>
+                    <p>{{ batch.start_date|date:"M j, Y" }} · {{ batch.schedule }}</p>
+                    {% if batch.venue %}<p>{{ batch.venue }}</p>{% endif %}
+                    <p><strong>{{ batch.available_seats }} out of 10 seats available</strong></p>
+                    {% if batch.is_full %}<span class="tag">Full — next batch available when applying</span>{% endif %}
+                </article>
+            {% empty %}
+                <p>No class batches have been scheduled yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+</section>
+{% endblock %}

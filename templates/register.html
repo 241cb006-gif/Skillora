@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Register | Skillora{% endblock %}
+
+{% block content %}
+<section class="container auth-wrap">
+    <div class="auth-card">
+        <h1>Create your account</h1>
+        <p>Choose Student for learning access. Teacher applications require approval by a college administrator; administrator accounts are created by the college.</p>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="button primary full-width">Register</button>
+        </form>
+        <p class="auth-link">Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+    </div>
+</section>
+{% endblock %}

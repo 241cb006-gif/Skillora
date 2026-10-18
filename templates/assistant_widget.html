@@ -1,0 +1,215 @@
+<div class="skillora-chat" data-chat-endpoint="{% url 'assistant_chat' %}">
+    <section class="chat-window" id="skillora-chat-window" aria-label="Skillora AI assistant" aria-hidden="true" hidden>
+        <header class="chat-window-header">
+            <div class="chat-avatar" aria-hidden="true">S</div>
+            <div class="chat-heading">
+                <h2>Skillora AI Guide</h2>
+                <p class="chat-mode">Courses, college information, and more</p>
+            </div>
+            <button type="button" class="chat-new" aria-label="Start a new chat">New chat</button>
+            <button type="button" class="chat-close" aria-label="Close Skillora Guide">×</button>
+        </header>
+        <div class="chat-prompts" aria-label="Suggested questions">
+            <button type="button" data-chat-prompt="What courses can I join this week?">Courses</button>
+            <button type="button" data-chat-prompt="How can I become a student mentor?">Teach a skill</button>
+            <button type="button" data-chat-prompt="How does certificate approval work?">Certificates</button>
+        </div>
+        <div class="chat-messages" role="log" aria-live="polite" aria-relevant="additions text">
+            <p class="chat-message assistant-message">Hi! Ask me about Skillora or anything you’re curious about.</p>
+        </div>
+        <form class="chat-form" method="post" action="{% url 'assistant_chat' %}">
+            {% csrf_token %}
+            <label class="visually-hidden" for="skillora-chat-input">Message Skillora AI Guide</label>
+            <input id="skillora-chat-input" name="message" type="text" maxlength="1500" autocomplete="off" placeholder="Checking Skillora Guide..." required disabled>
+            <button class="button primary" type="submit" disabled>Send</button>
+        </form>
+        <p class="chat-disclaimer">Skillora answers use current platform records. College facts link to the official college website.</p>
+    </section>
+    <button type="button" class="chat-launcher" aria-controls="skillora-chat-window" aria-expanded="false">
+        <span class="chat-launcher-icon" aria-hidden="true">?</span>
+        <span>Ask Skillora</span>
+    </button>
+</div>
+
+<script>
+(() => {
+    const widget = document.querySelector('.skillora-chat');
+    if (!widget) return;
+
+    const panel = widget.querySelector('.chat-window');
+    const launcher = widget.querySelector('.chat-launcher');
+    const close = widget.querySelector('.chat-close');
+    const newChat = widget.querySelector('.chat-new');
+    const form = widget.querySelector('.chat-form');
+    const input = form.elements.message;
+    const messages = widget.querySelector('.chat-messages');
+    const sendButton = form.querySelector('button[type="submit"]');
+    const endpoint = widget.dataset.chatEndpoint;
+    const csrfToken = form.elements.csrfmiddlewaretoken.value;
+    let loading = false;
+    let assistantAvailable = false;
+
+    function setComposerEnabled(enabled) {
+        input.disabled = !enabled;
+        sendButton.disabled = !enabled || loading;
+        input.placeholder = enabled ? 'Ask a question or follow up...' : 'Skillora Guide is unavailable';
+    }
+
+    function setOpen(open) {
+        panel.hidden = !open;
+        panel.setAttribute('aria-hidden', String(!open));
+        launcher.setAttribute('aria-expanded', String(open));
+        if (open) input.focus();
+    }
+
+    function appendMessage(text, role, isError = false) {
+        const message = document.createElement('p');
+        message.className = `chat-message ${role === 'user' ? 'user-message' : 'assistant-message'}`;
+        if (isError) message.classList.add('chat-error');
+        message.textContent = text;
+        messages.appendChild(message);
+        return message;
+    }
+
+    function appendSources(sources) {
+        if (!Array.isArray(sources) || !sources.length) return;
+        const row = document.createElement('div');
+        row.className = 'chat-action-list chat-sources';
+        sources.forEach(source => {
+            const link = document.createElement('a');
+            link.className = 'chat-action-link';
+            link.href = source.url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = source.label || 'Source';
+            row.appendChild(link);
+        });
+        messages.appendChild(row);
+    }
+
+    function appendActions(actions) {
+        if (!Array.isArray(actions) || !actions.length) return;
+        const row = document.createElement('div');
+        row.className = 'chat-action-list';
+        actions.forEach(action => {
+            const link = document.createElement('a');
+            link.className = 'chat-action-link';
+            link.href = action.url;
+            link.textContent = action.label;
+            row.appendChild(link);
+        });
+        messages.appendChild(row);
+    }
+
+    function renderHistory(history) {
+        messages.replaceChildren();
+        if (!Array.isArray(history) || history.length === 0) {
+            appendMessage('Hi! Ask me about Skillora or anything you’re curious about.', 'assistant');
+        } else {
+            history.forEach(item => appendMessage(item.content, item.role));
+        }
+    }
+
+    async function loadHistory() {
+        try {
+            const response = await fetch(endpoint, { headers: { 'Accept': 'application/json' } });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Conversation history could not be loaded.');
+            assistantAvailable = Boolean(result.configured);
+            widget.querySelector('.chat-mode').textContent = result.mode === 'local'
+                ? 'Local guide · Skillora questions and help'
+                : 'Courses, college information, and more';
+            setComposerEnabled(assistantAvailable);
+            renderHistory(result.history);
+        } catch (error) {
+            appendMessage(error.message || 'Conversation history could not be loaded.', 'assistant', true);
+        }
+    }
+
+    async function sendMessage(text) {
+        if (loading || !assistantAvailable) return;
+        setOpen(true);
+        loading = true;
+        sendButton.disabled = true;
+        newChat.disabled = true;
+        appendMessage(text, 'user');
+        const typing = appendMessage('Thinking', 'assistant');
+        typing.classList.add('is-typing');
+        messages.scrollTop = messages.scrollHeight;
+        const formData = new FormData(form);
+        formData.set('message', text);
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-CSRFToken': csrfToken, 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'The AI assistant could not answer just now.');
+            typing.textContent = result.reply;
+            typing.classList.remove('is-typing');
+            appendSources(result.sources);
+            appendActions(result.actions);
+        } catch (error) {
+            typing.textContent = error.message || 'The AI assistant is unavailable. Please try again.';
+            typing.classList.remove('assistant-message', 'is-typing');
+            typing.classList.add('chat-error');
+        } finally {
+            loading = false;
+            setComposerEnabled(assistantAvailable);
+            newChat.disabled = false;
+            messages.scrollTop = messages.scrollHeight;
+        }
+    }
+
+    async function startNewChat() {
+        if (loading) return;
+        loading = true;
+        sendButton.disabled = true;
+        newChat.disabled = true;
+        const formData = new FormData(form);
+        formData.set('action', 'new_chat');
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-CSRFToken': csrfToken, 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'A new chat could not be started.');
+            renderHistory(result.history);
+            input.focus();
+        } catch (error) {
+            appendMessage(error.message || 'A new chat could not be started.', 'assistant', true);
+        } finally {
+            loading = false;
+            setComposerEnabled(assistantAvailable);
+            newChat.disabled = false;
+        }
+    }
+
+    launcher.addEventListener('click', () => setOpen(panel.hidden));
+    close.addEventListener('click', () => {
+        setOpen(false);
+        launcher.focus();
+    });
+    newChat.addEventListener('click', startNewChat);
+    form.addEventListener('submit', event => {
+        event.preventDefault();
+        const question = input.value.trim();
+        if (!question || loading) return;
+        input.value = '';
+        sendMessage(question);
+    });
+    widget.querySelectorAll('[data-chat-prompt]').forEach(button => {
+        button.addEventListener('click', () => sendMessage(button.dataset.chatPrompt));
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !panel.hidden) {
+            setOpen(false);
+            launcher.focus();
+        }
+    });
+    loadHistory();
+})();
+</script>

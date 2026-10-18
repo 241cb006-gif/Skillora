@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance | {{ batch.course.title }}{% endblock %}
+
+{% block content %}
+<section class="container spaced-section">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">{{ batch.course.department.name }}</span>
+            <h1>{{ batch.course.title }} · {{ batch.name }}</h1>
+            <p>{{ batch.start_date|date:"M j, Y" }} · {{ batch.schedule }} · {{ batch.get_mode_display }}</p>
+        </div>
+        <a href="{% url 'teacher_dashboard' %}" class="button secondary">Back to dashboard</a>
+    </div>
+    <section class="panel">
+        <form method="post">
+            {% csrf_token %}
+            <label for="session_date">Class date</label>
+            <input type="date" id="session_date" name="session_date" value="{{ attendance_date|date:'Y-m-d' }}" required>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead><tr><th>Student</th><th>Department</th><th>Present</th><th>Attendance</th><th>Verify completion</th></tr></thead>
+                    <tbody>
+                    {% for row in students %}
+                        <tr>
+                            <td>{{ row.application.applicant_name }}</td>
+                            <td>{{ row.application.department.name }}</td>
+                            <td><input type="checkbox" name="present_{{ row.application.pk }}" {% if row.present_today %}checked{% endif %}></td>
+                            <td>{{ row.attendance_percent }}% ({{ row.present_count }}/{{ row.total_sessions }})</td>
+                            <td>
+                                {% if not row.completed %}
+                                    <input type="checkbox" name="complete_{{ row.application.pk }}" aria-label="Verify {{ row.application.applicant_name }} course completion">
+                                {% else %}
+                                    <span class="tag success">Completed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5">No accepted students are in this batch yet.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p>Completion can be verified after at least 75% attendance. Saving attendance and verifying completion are separate actions.</p>
+            <button type="submit" class="button primary">Save attendance</button>
+        </form>
+    </section>
+</section>
+{% endblock %}

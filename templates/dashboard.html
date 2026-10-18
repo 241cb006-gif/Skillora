@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard | Skillora{% endblock %}
+
+{% block content %}
+<section class="dashboard-shell dashboard-page container">
+    <aside class="sidebar">
+        <div class="sidebar-brand">Skillora</div>
+        <nav class="sidebar-nav">
+            <a href="{% url 'dashboard' %}" class="active">Overview</a>
+            <a href="{% url 'marketplace' %}">Marketplace</a>
+            <a href="{% url 'profile' %}">Profile</a>
+            <a href="{% url 'request_session' %}">Sessions</a>
+            <a href="{% url 'home' %}">Home</a>
+        </nav>
+        <div class="sidebar-card">
+            <small>College context</small>
+            <strong>{{ college_name }}</strong>
+            <a href="https://srcw.ac.in/" target="_blank" rel="noopener noreferrer">Official college website</a>
+        </div>
+    </aside>
+
+    <main class="main-panel">
+        <div class="dashboard-welcome">
+            <div class="dashboard-welcome-copy">
+                <span class="eyebrow">Student dashboard</span>
+                <h1>Welcome back, {{ user.get_full_name|default:user.username }}.</h1>
+                <a href="{% url 'marketplace' %}" class="button primary">Browse courses</a>
+            </div>
+            <img class="dashboard-welcome-photo" src="{% static 'core/srcw-home-banner.png' %}" alt="Students studying together at Sri Ramakrishna College of Arts and Science for Women" width="1280" height="500">
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card"><span>Applications</span><strong>{{ application_progress|length }}</strong></div>
+            <div class="stat-card"><span>Session requests</span><strong>{{ recent_requests.count }}</strong></div>
+            <div class="stat-card"><span>Certificates</span><strong>{{ certificates.count }}</strong></div>
+            <div class="stat-card"><span>Upcoming sessions</span><strong>{{ upcoming_sessions.count }}</strong></div>
+        </div>
+
+        <section class="panel" id="applications">
+            <h2>My course applications</h2>
+            {% for row in application_progress %}
+                <div class="list-item">
+                    <div>
+                        <strong><a href="{% url 'course_detail' row.application.course.slug %}">{{ row.application.course.title }}</a></strong>
+                        <p>{{ row.application.department.name }} · {{ row.application.batch.name }} · {{ row.application.batch.start_date|date:"M j, Y" }} · {{ row.application.batch.schedule }}</p>
+                        {% if row.application.status == 'accepted' %}
+                            <p>{{ row.attendance_percent }}% attendance ({{ row.present_sessions }}/{{ row.total_sessions }} classes)</p>
+                            {% if row.application.batch.venue %}<p>Venue: {{ row.application.batch.venue }}</p>{% endif %}
+                            {% if row.application.batch.meeting_link %}<p><a href="{{ row.application.batch.meeting_link }}" target="_blank" rel="noopener noreferrer">Open class meeting</a></p>{% endif %}
+                        {% endif %}
+                    </div>
+                    <span class="tag {% if row.application.status == 'accepted' %}success{% endif %}">{{ row.application.get_status_display }}</span>
+                </div>
+            {% empty %}
+                <p>You have not applied for a course yet. <a href="{% url 'departments' %}">Explore department courses</a>.</p>
+            {% endfor %}
+        </section>
+
+        <section class="panel" id="notifications" style="margin-top: 24px;">
+            <h2>Notifications</h2>
+            {% for notification in notifications %}
+                <div class="list-item">
+                    <div><strong>{{ notification.title }}</strong><p>{{ notification.message }}</p><small>{{ notification.created_at|date:"M j, Y g:i A" }}</small></div>
+                    {% if notification.url %}<a href="{{ notification.url }}">View</a>{% endif %}
+                </div>
+            {% empty %}
+                <p>No application or class updates yet.</p>
+            {% endfor %}
+        </section>
+
+        <section class="panel certificate-goals">
+            <span class="eyebrow">Keep learning</span>
+            <h2>Your certificate goal</h2>
+            <p>Finish a course and have your teacher verify completion to unlock your personalized certificate preview. The official certificate stays pending until authorized college review.</p>
+            <div class="certificate-goal-grid">
+                {% for enrollment in enrollments %}
+                    <article class="certificate-goal-card">
+                        <div class="certificate-preview-shell {% if not enrollment.completed or not enrollment.completion_verified_by_id %}is-locked{% endif %}">
+                            <div class="certificate-preview-paper">
+                                <span class="certificate-preview-kicker">Skillora learning record</span>
+                                <strong class="certificate-preview-title">Certificate of Completion</strong>
+                                <span class="certificate-preview-caption">Presented to</span>
+                                <strong class="certificate-preview-name">{{ user.get_full_name|default:user.username }}</strong>
+                                <span class="certificate-preview-caption">For completing</span>
+                                <strong class="certificate-preview-course">{{ enrollment.course.title }}</strong>
+                                <span class="certificate-preview-stamp">PREVIEW · NOT ISSUED</span>
+                            </div>
+                            {% if not enrollment.completed or not enrollment.completion_verified_by_id %}
+                                <div class="certificate-lock-overlay">
+                                    <span class="certificate-lock-icon" aria-hidden="true"></span>
+                                    <strong>Preview locked</strong>
+                                    <span>Complete the course and ask your teacher to verify it.</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% if enrollment.completed and enrollment.completion_verified_by_id %}
+                            <p class="certificate-goal-status">Preview unlocked. Your official certificate requires authorized approval.</p>
+                        {% else %}
+                            <p class="certificate-goal-status">Your learning progress will unlock this personalized preview.</p>
+                        {% endif %}
+                    </article>
+                {% empty %}
+                    <article class="certificate-goal-card">
+                        <div class="certificate-preview-shell is-locked">
+                            <div class="certificate-preview-paper">
+                                <span class="certificate-preview-kicker">Skillora learning record</span>
+                                <strong class="certificate-preview-title">Certificate of Completion</strong>
+                                <span class="certificate-preview-caption">Presented to</span>
+                                <strong class="certificate-preview-name">Your name</strong>
+                                <span class="certificate-preview-caption">For completing</span>
+                                <strong class="certificate-preview-course">Your course</strong>
+                                <span class="certificate-preview-stamp">PREVIEW · NOT ISSUED</span>
+                            </div>
+                            <div class="certificate-lock-overlay">
+                                <span class="certificate-lock-icon" aria-hidden="true"></span>
+                                <strong>Start learning to unlock</strong>
+                                <span>Join a course to begin your certificate journey.</span>
+                            </div>
+                        </div>
+                        <a class="button secondary" href="{% url 'marketplace' %}">Explore courses</a>
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        <div class="panel" style="margin-bottom: 24px;">
+            <h2>Course progress</h2>
+            {% for enrollment in enrollments %}
+                <div class="list-item">
+                    <div>
+                        <strong>{{ enrollment.course.title }}</strong>
+                        <p>{{ enrollment.completed|yesno:'Completed,In progress' }}</p>
+                    </div>
+                    {% if enrollment.completed and enrollment.course_id not in certificate_course_ids and enrollment.completion_verified_by_id %}
+                        <a href="{% url 'request_certificate' enrollment.course_id %}">Request certificate</a>
+                    {% elif enrollment.completed and not enrollment.completion_verified_by_id %}
+                        <span class="tag">Awaiting instructor verification</span>
+                    {% elif enrollment.completed %}
+                        <a href="#certificate-status">View certificate status</a>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <p>You haven’t joined a course yet. Explore the marketplace to begin.</p>
+            {% endfor %}
+        </div>
+
+        <div class="two-col-layout">
+            <div class="panel" id="upcoming-sessions">
+                <h2>Enrolled courses</h2>
+                {% for enrollment in enrollments %}
+                    <div class="list-item">
+                        <div>
+                            <strong>{{ enrollment.course.title }}</strong>
+                            <p>{{ enrollment.course.instructor.get_full_name|default:enrollment.course.instructor.username }}</p>
+                        </div>
+                        <span class="tag">{{ enrollment.status|title }}</span>
+                    </div>
+                {% empty %}
+                    <p>No courses enrolled yet.</p>
+                {% endfor %}
+            </div>
+            <div class="panel" id="certificate-status">
+                <h2>Upcoming sessions</h2>
+                {% for session in upcoming_sessions %}
+                    <div class="list-item">
+                        <div>
+                            <strong>{{ session.title }}</strong>
+                            <p>{{ session.preferred_slot }}</p>
+                        </div>
+                        <span class="tag success">{{ session.status|title }}</span>
+                    </div>
+                {% empty %}
+                    <p>No accepted sessions yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if incoming_requests %}
+        <section class="panel" style="margin-top: 24px;">
+            <h2>Session requests for you</h2>
+            {% for request in incoming_requests %}
+                <div class="list-item">
+                    <div>
+                        <strong>{{ request.title }}</strong>
+                        <p>From {{ request.from_user.get_full_name|default:request.from_user.username }} · {{ request.preferred_slot }}</p>
+                    </div>
+                    <div class="button-row">
+                        <form method="post" action="{% url 'decide_session' request.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="decision" value="accepted">
+                            <button type="submit" class="button primary">Accept</button>
+                        </form>
+                        <form method="post" action="{% url 'decide_session' request.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="decision" value="rejected">
+                            <button type="submit" class="button secondary">Decline</button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        <div class="two-col-layout">
+            <div class="panel">
+                <h2>Recommended skills</h2>
+                {% for skill in recommended_courses %}
+                    <div class="list-item">
+                        <div>
+                            <strong>{{ skill.title }}</strong>
+                            <p>{{ skill.skill.category }}</p>
+                        </div>
+                        <a href="{% url 'course_detail' skill.slug %}">Open</a>
+                    </div>
+                {% empty %}
+                    <p>No recommendations yet.</p>
+                {% endfor %}
+            </div>
+            <div class="panel">
+                <h2>Certificate status</h2>
+                {% for cert in certificates %}
+                    <div class="list-item">
+                        <div>
+                            <strong>{{ cert.course.title }}</strong>
+                            <p>{{ cert.status|title }}</p>
+                            {% if cert.status == 'approved' %}
+                                <p>Certificate ID: {{ cert.certificate_number }}</p>
+                            {% endif %}
+                        </div>
+                        {% if cert.status == 'approved' %}
+                            <div class="certificate-dashboard-actions">
+                                <a href="{% url 'view_certificate' cert.id %}">View Certificate</a>
+                                <a href="{% url 'download_certificate' cert.id %}">Download Certificate</a>
+                            </div>
+                        {% endif %}
+                        {% if cert.status == 'approved' %}<a href="{% url 'verify_certificate' cert.id %}">Verify</a>{% endif %}
+                    </div>
+                {% empty %}
+                    <p>No certificate requests yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+</section>
+
+{% endblock %}

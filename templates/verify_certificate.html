@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Certificate verification | Skillora{% endblock %}
+
+{% block content %}
+<section class="container spaced-section">
+    <div class="auth-card verification-card">
+        {% if is_valid %}
+            <span class="tag success">Verified certificate</span>
+            <h1>Certificate is valid</h1>
+            <p>This Skillora platform record was approved by an authorized reviewer. It is not an official college credential unless separately authorized by the college.</p>
+            <dl class="verification-details">
+                <dt>Certificate ID</dt>
+                <dd>{{ certificate.certificate_number }}</dd>
+                <dt>Student</dt>
+                <dd>{{ certificate.student.get_full_name|default:certificate.student.username }}</dd>
+                <dt>Course</dt>
+                <dd>{{ certificate.course.title }}</dd>
+                <dt>Department</dt>
+                <dd>{{ certificate.course.department.name|default:"Not recorded" }}</dd>
+                <dt>Completion date</dt>
+                <dd>{{ certificate.completion_date|date:"F j, Y"|default:"Not recorded" }}</dd>
+                <dt>Reviewed by</dt>
+                <dd>{{ certificate.reviewed_by.get_full_name|default:certificate.reviewed_by.username|default:"Skillora reviewer" }}</dd>
+                <dt>Issue date</dt>
+                <dd>{{ certificate.issued_at|date:"F j, Y" }}</dd>
+            </dl>
+        {% else %}
+            <span class="tag">Not verified</span>
+            <h1>Certificate not found or not valid</h1>
+            <p>This certificate is not currently approved. Contact the college faculty administrator if you believe this is an error.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

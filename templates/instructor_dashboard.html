@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Dashboard | Skillora{% endblock %}
+
+{% block content %}
+<section class="container spaced-section dashboard-page">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">Teacher workspace</span>
+            <h1>Manage your teaching</h1>
+        </div>
+        <div class="button-row">
+            <a href="{% url 'request_session' %}" class="button secondary">Request a session</a>
+            <a href="{% url 'create_course' %}" class="button primary">Create course</a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card"><span>Courses</span><strong>{{ courses.count }}</strong></div>
+        <div class="stat-card"><span>Pending session requests</span><strong>{{ student_requests.count }}</strong></div>
+        <div class="stat-card"><span>Pending applications</span><strong>{{ pending_applications.count }}</strong></div>
+    </div>
+
+    <div class="panel" style="margin-bottom: 24px;">
+        <h2>Attendance tools</h2>
+        {% for course in courses %}
+            <div class="list-item">
+                <div>
+                    <strong>{{ course.title }}</strong>
+                    <p>{{ course.department.name|default:"Department not assigned" }} · {{ course.mode|title }} · {{ course.get_approval_status_display }}</p>
+                </div>
+                <div class="button-row">
+                    <a href="{% url 'edit_course' course.slug %}">Edit</a>
+                    <a href="{% url 'create_batch' course.slug %}">Add batch</a>
+                    <a href="{% url 'course_detail' course.slug %}">View course</a>
+                </div>
+                {% for batch in course.batches.all %}
+                    <div class="list-item">
+                        <div><strong>{{ batch.name }}</strong><p>{{ batch.start_date|date:"M j, Y" }} · {{ batch.schedule }} · {{ batch.available_seats }} of 10 seats left</p></div>
+                        <a href="{% url 'batch_attendance' batch.pk %}">View students and attendance</a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% empty %}
+            <p>No courses yet.</p>
+        {% endfor %}
+    </div>
+
+    <section class="panel" style="margin-bottom: 24px;">
+        <h2>Pending course applications</h2>
+        {% for application in pending_applications %}
+            <div class="list-item">
+                <div>
+                    <strong>{{ application.applicant_name }}</strong>
+                    <p>{{ application.course.title }} · {{ application.department.name }} · {{ application.batch.name }} · {{ application.batch.schedule }}</p>
+                    <p>{{ application.college_email }} · {{ application.preferred_mode|title }}</p>
+                </div>
+                <div class="button-row">
+                    <form method="post" action="{% url 'review_application' application.pk %}">
+                        {% csrf_token %}<input type="hidden" name="decision" value="accepted">
+                        <button class="button primary" type="submit">Accept</button>
+                    </form>
+                    <form method="post" action="{% url 'review_application' application.pk %}">
+                        {% csrf_token %}<input type="hidden" name="decision" value="rejected">
+                        <button class="button secondary" type="submit">Reject</button>
+                    </form>
+                </div>
+            </div>
+        {% empty %}
+            <p>No student applications are waiting for review.</p>
+        {% endfor %}
+    </section>
+
+    <section class="panel" id="accepted-students" style="margin-bottom: 24px;">
+        <h2>Accepted students and attendance</h2>
+        {% for row in accepted_applications %}
+            <div class="list-item">
+                <div>
+                    <strong>{{ row.application.applicant_name }}</strong>
+                    <p>{{ row.application.course.title }} · {{ row.application.department.name }} · {{ row.application.batch.schedule }}</p>
+                    <p>{{ row.attendance_percent }}% attendance ({{ row.present_count }}/{{ row.session_count }} classes)</p>
+                    {% if row.enrollment and row.enrollment.completed %}<span class="tag success">Course completed</span>{% endif %}
+                </div>
+                <a href="{% url 'batch_attendance' row.application.batch.pk %}">View attendance</a>
+            </div>
+        {% empty %}
+            <p>No students have been accepted into your course batches yet.</p>
+        {% endfor %}
+    </section>
+
+    <div class="two-col-layout">
+        <div class="panel">
+            <h2>Your courses</h2>
+            {% for course in courses %}
+                <div class="list-item">
+                    <div>
+                        <strong>{{ course.title }}</strong>
+                        <p>{{ course.mode|title }} • {{ course.schedule }}</p>
+                    </div>
+                    <a href="{% url 'course_detail' course.slug %}">Preview</a>
+                </div>
+            {% empty %}
+                <p>No courses created yet.</p>
+            {% endfor %}
+        </div>
+        <div class="panel">
+            <h2>Pending session requests</h2>
+            {% for request in student_requests %}
+                <div class="list-item">
+                    <div>
+                        <strong>{{ request.title }}</strong>
+                        <p>{{ request.from_user.get_full_name|default:request.from_user.username }}</p>
+                    </div>
+                    <div class="button-row">
+                        <form method="post" action="{% url 'decide_session' request.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="decision" value="accepted">
+                            <button class="button primary" type="submit">Accept</button>
+                        </form>
+                        <form method="post" action="{% url 'decide_session' request.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="decision" value="rejected">
+                            <button class="button secondary" type="submit">Decline</button>
+                        </form>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No pending requests.</p>
+            {% endfor %}
+        </div>
+    </div>
+    <section class="panel" style="margin-top: 24px;">
+        <h2>Course completion checks</h2>
+        <p>Record a learner's attendance, then explicitly confirm completion for eligible learners.</p>
+        {% for enrollment in pending_completions %}
+            <div class="list-item">
+                <div><strong>{{ enrollment.student.get_full_name|default:enrollment.student.username }}</strong><p>{{ enrollment.course.title }}</p></div>
+                <a href="{% url 'record_attendance' enrollment.course.slug %}">Review attendance</a>
+            </div>
+        {% empty %}
+            <p>No pending completion checks.</p>
+        {% endfor %}
+    </section>
+    {% if pending_certificates %}
+    <section class="panel" style="margin-top: 24px;">
+        <h2>Certificate requests for your courses</h2>
+        {% for certificate in pending_certificates %}
+            <div class="list-item"><div><strong>{{ certificate.student.get_full_name|default:certificate.student.username }}</strong><p>{{ certificate.course.title }} · {{ certificate.status|title }}</p></div><a href="{% url 'review_certificate' certificate.pk %}">Review</a></div>
+        {% endfor %}
+    </section>
+    {% endif %}
+</section>
+{% endblock %}

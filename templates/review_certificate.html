@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Review Certificate | Skillora{% endblock %}
+
+{% block content %}
+<section class="container auth-wrap">
+    <div class="auth-card wide-form">
+        <h1>Certificate review</h1>
+        <p><strong>Student:</strong> {{ certificate.student.get_full_name|default:certificate.student.username }}</p>
+        <p><strong>Course:</strong> {{ certificate.course.title }}</p>
+        <p><strong>Status:</strong> {{ certificate.status|title }}</p>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="button primary full-width">Submit review</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

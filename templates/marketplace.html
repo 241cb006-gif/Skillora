@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Marketplace | Skillora{% endblock %}
+
+{% block content %}
+<section class="container spaced-section">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">Skill marketplace</span>
+            <h1>Browse courses and learning opportunities</h1>
+        </div>
+        {% if user.is_authenticated and user.is_teacher %}
+            <a href="{% url 'create_course' %}" class="button primary">Add course</a>
+        {% endif %}
+    </div>
+
+    <form method="get" class="filter-form">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search by skill or course name">
+        <select name="department">
+            <option value="">All departments</option>
+            {% for department in department_list %}
+                <option value="{{ department.slug }}" {% if department.slug == current_department %}selected{% endif %}>{{ department.name }}</option>
+            {% endfor %}
+        </select>
+        <select name="category">
+            <option value="">All categories</option>
+            {% for skill in skill_list %}
+                <option value="{{ skill.category }}" {% if skill.category == current_category %}selected{% endif %}>{{ skill.category }}</option>
+            {% endfor %}
+        </select>
+        <select name="mode">
+            <option value="">All modes</option>
+            <option value="online" {% if current_mode == 'online' %}selected{% endif %}>Online</option>
+            <option value="offline" {% if current_mode == 'offline' %}selected{% endif %}>Offline</option>
+        </select>
+        <button type="submit" class="button primary">Apply</button>
+    </form>
+
+    <div class="card-grid three-col">
+        {% for course in courses %}
+        <article class="course-card">
+            <span class="badge">{{ course.mode|title }}</span>
+            <h3>{{ course.title }}</h3>
+            <p class="meta">{{ course.skill.title }} • {{ course.instructor.get_full_name|default:course.instructor.username }}</p>
+            <p>{{ course.description|truncatewords:22 }}</p>
+            <div class="course-meta">
+                <span>{{ course.duration_weeks }} weeks</span>
+                <span>{{ course.schedule }}</span>
+            </div>
+            <div class="card-footer">
+                <span>
+                    {% with first_batch=course.batches.all|first %}
+                        {% if first_batch %}{{ first_batch.available_seats }} of 10 seats left{% else %}Batch timing to be announced{% endif %}
+                    {% endwith %}
+                </span>
+                <a href="{% url 'course_detail' course.slug %}">View</a>
+            </div>
+            {% if user.is_authenticated and user.is_student %}
+                <a class="button primary" href="{% url 'apply_course' course.slug %}">Apply</a>
+            {% elif not user.is_authenticated %}
+                <a class="button primary" href="{% url 'login' %}?next={% url 'apply_course' course.slug %}">Apply</a>
+            {% endif %}
+        </article>
+        {% empty %}
+        <p>No courses match your current search.</p>
+        {% endfor %}
+    </div>
+    {% if courses.paginator.num_pages > 1 %}
+    <nav class="pagination" aria-label="Course pages">
+        {% if courses.has_previous %}<a href="?q={{ query|urlencode }}&department={{ current_department|urlencode }}&category={{ current_category|urlencode }}&mode={{ current_mode|urlencode }}&page={{ courses.previous_page_number }}">Previous</a>{% endif %}
+        <span>Page {{ courses.number }} of {{ courses.paginator.num_pages }}</span>
+        {% if courses.has_next %}<a href="?q={{ query|urlencode }}&department={{ current_department|urlencode }}&category={{ current_category|urlencode }}&mode={{ current_mode|urlencode }}&page={{ courses.next_page_number }}">Next</a>{% endif %}
+    </nav>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Departments and Courses | Skillora{% endblock %}
+
+{% block content %}
+<section class="container spaced-section">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">Explore Skillora</span>
+            <h1>Courses by department</h1>
+            <p>Find a class, see its teacher and time, and apply for an open batch.</p>
+        </div>
+        <a href="{% url 'marketplace' %}" class="button primary">Search all courses</a>
+    </div>
+    {% for department in departments %}
+        <section class="panel department-section" id="{{ department.slug }}">
+            <div class="section-header">
+                <div><span class="eyebrow">Department</span><h2>{{ department.name }}</h2></div>
+            </div>
+            {% if department.description %}<p>{{ department.description }}</p>{% endif %}
+            <div class="card-grid three-col">
+                {% for course in department.courses.all %}
+                    <article class="course-card">
+                        <span class="badge">{{ course.get_mode_display }}</span>
+                        <h3>{{ course.title }}</h3>
+                        <p class="meta">Teacher: {{ course.instructor.get_full_name|default:course.instructor.username }}</p>
+                        <p>{{ course.description|truncatewords:18 }}</p>
+                        {% for batch in course.batches.all %}
+                            <div class="batch-summary">
+                                <strong>{{ batch.name }} · {{ batch.start_date|date:"M j, Y" }}</strong>
+                                <p>{{ batch.schedule }} · {{ batch.get_mode_display }}</p>
+                                <p>{{ batch.available_seats }} out of 10 seats available</p>
+                                {% if batch.venue %}<p>Venue: {{ batch.venue }}</p>{% endif %}
+                            </div>
+                        {% empty %}
+                            <p>No batch timing posted yet.</p>
+                        {% endfor %}
+                        <a href="{% url 'course_detail' course.slug %}" class="button secondary">View course</a>
+                        {% if user.is_authenticated and user.is_student %}
+                            <a href="{% url 'apply_course' course.slug %}" class="button primary">Apply</a>
+                        {% elif not user.is_authenticated %}
+                            <a href="{% url 'login' %}?next={% url 'apply_course' course.slug %}" class="button primary">Apply</a>
+                        {% endif %}
+                    </article>
+                {% empty %}
+                    <p>There are no approved courses in this department yet.</p>
+                {% endfor %}
+            </div>
+        </section>
+    {% empty %}
+        <div class="panel"><p>Department listings are being prepared.</p></div>
+    {% endfor %}
+</section>
+{% endblock %}

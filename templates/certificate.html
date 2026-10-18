@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Certificate of Completion | Skillora{% endblock %}
+
+{% block content %}
+<section class="container certificate-page">
+    <div class="certificate-actions no-print">
+        <a class="button secondary" href="{% url 'student_dashboard' %}">Back to dashboard</a>
+        <a class="button primary" href="{% url 'download_certificate' certificate.pk %}">Download A4 PDF</a>
+    </div>
+
+    <article class="completion-certificate" aria-label="Skillora certificate of completion">
+        <div class="certificate-frame">
+            <div class="completion-watermark" aria-hidden="true">SKILLORA</div>
+            <header class="completion-header">
+                <div class="completion-mark" aria-label="Skillora platform mark">S</div>
+                <div class="completion-college">
+                    <p>{{ college_name }}</p>
+                    <span>Learning context · Skillora platform record</span>
+                </div>
+                <div class="completion-brand">
+                    <strong>SKILLORA</strong>
+                    <span>STUDENT SKILL EXCHANGE</span>
+                </div>
+            </header>
+
+            <div class="completion-title">
+                <span>SKILLORA COURSE RECORD</span>
+                <h1>Certificate of Completion</h1>
+                <div class="completion-rule"><span></span></div>
+            </div>
+
+            <div class="completion-main">
+                <p class="completion-intro">This is to certify that</p>
+                <h2>{{ certificate.student.get_full_name|default:certificate.student.username }}</h2>
+                <p class="completion-statement">has successfully completed the course</p>
+                <h3>{{ certificate.course.title }}</h3>
+                <p class="completion-department">
+                    offered through Skillora in the
+                    <strong>{{ certificate.course.department.name|default:"Department not recorded" }}</strong>
+                    department.
+                </p>
+                <p class="completion-instructor">
+                    Course instructor:
+                    <strong>{{ certificate.course.instructor.get_full_name|default:certificate.course.instructor.username }}</strong>
+                </p>
+            </div>
+
+            <div class="completion-signatures">
+                <div class="completion-signature">
+                    <span class="signature-rule"></span>
+                    <strong>{{ certificate.course.instructor.get_full_name|default:certificate.course.instructor.username }}</strong>
+                    <small>Course instructor · signature not recorded</small>
+                </div>
+                <div class="completion-signature">
+                    <span class="signature-rule"></span>
+                    <strong>{{ certificate.reviewed_by.get_full_name|default:certificate.reviewed_by.username|default:"Not recorded" }}</strong>
+                    <small>Authorized Skillora reviewer · signature not recorded</small>
+                </div>
+                <div class="completion-qr">
+                    <img src="{% url 'certificate_qr' certificate.pk %}" alt="QR code linking to certificate verification">
+                    <span>Scan to verify</span>
+                </div>
+            </div>
+
+            <footer class="completion-footer">
+                <div>
+                    <span>Completion date</span>
+                    <strong>{{ certificate.completion_date|date:"F j, Y" }}</strong>
+                </div>
+                <div>
+                    <span>Issue date</span>
+                    <strong>{{ certificate.issued_at|date:"F j, Y" }}</strong>
+                </div>
+                <div>
+                    <span>Certificate ID</span>
+                    <strong>{{ certificate.certificate_number }}</strong>
+                </div>
+            </footer>
+        </div>
+        <p class="certificate-disclaimer">
+            Skillora-issued learning record. The college name is shown for learning context only.
+            This is not a college-issued credential or endorsement. No college logo or signature is represented.
+        </p>
+    </article>
+</section>
+{% endblock %}

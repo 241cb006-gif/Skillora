@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Course | Skillora{% endblock %}
+
+{% block content %}
+<section class="container auth-wrap">
+    <div class="auth-card wide-form">
+        <h1>{% if editing %}Edit course{% else %}Create a new course{% endif %}</h1>
+        <p>New and edited courses are held for college administrator review before appearing in Explore Skills.</p>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="button primary full-width">Submit for approval</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

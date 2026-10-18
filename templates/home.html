@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Skillora | Your Skills. Your Community. Your Future.{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="container hero-grid">
+        <div class="hero-copy">
+            <span class="learning-model-badge">Student-to-Student Learning</span>
+            <h1>Learn from students. Share what you know.</h1>
+            <p>Become a Student Mentor and teach skills you know, or join courses led by fellow students to learn something new at Sri Ramakrishna College of Arts and Science for Women.</p>
+            <div class="cta-row">
+                <a href="{% url 'marketplace' %}" class="button primary">Explore Courses</a>
+                {% if not user.is_authenticated %}
+                    <a href="{% url 'register' %}" class="button secondary">Teach a Skill</a>
+                {% elif user.is_teacher %}
+                    <a href="{% url 'create_course' %}" class="button secondary">Teach a Skill</a>
+                {% elif user.is_instructor %}
+                    <a href="{% url 'teacher_pending' %}" class="button secondary">Teach a Skill</a>
+                {% endif %}
+            </div>
+            <div class="floating-skills" aria-label="Popular skills">
+                <span>Python</span>
+                <span>Web Dev</span>
+                <span>UI/UX</span>
+                <span>Data Analytics</span>
+                <span>Communication</span>
+            </div>
+        </div>
+        <div class="hero-media">
+            <div class="photo-frame">
+                <img class="campus-photo featured-photo" src="{% static 'core/srcw-home-banner.png' %}" alt="Students at Sri Ramakrishna College of Arts and Science for Women" width="1280" height="500" fetchpriority="high">
+                <span class="photo-credit">Official college homepage</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section container" id="departments">
+    <div class="section-header">
+        <div><span class="eyebrow">Find your next class</span><h2>Departments and courses</h2></div>
+        <a href="{% url 'departments' %}">View all departments</a>
+    </div>
+    <div class="department-links">
+        {% for department in departments %}
+            <a class="department-link" href="{% url 'departments' %}#{{ department.slug }}">
+                <strong>{{ department.name }}</strong>
+                <span>{{ department.courses.all|length }} approved courses</span>
+            </a>
+        {% empty %}
+            <a class="department-link" href="{% url 'departments' %}">Explore department listings</a>
+        {% endfor %}
+    </div>
+    <div class="card-grid three-col mt-4" id="courses">
+        {% for course in featured_courses %}
+            <article class="course-card reveal-card">
+                <span class="badge">{{ course.get_mode_display }}</span>
+                <h3>{{ course.title }}</h3>
+                <p class="meta">{{ course.department.name }} · Teacher: {{ course.instructor.get_full_name|default:course.instructor.username }}</p>
+                {% with first_batch=course.batches.all|first %}
+                    {% if first_batch %}
+                        <p>{{ first_batch.schedule }} · {{ first_batch.available_seats }} out of 10 seats available</p>
+                    {% else %}
+                        <p>{{ course.schedule }}</p>
+                    {% endif %}
+                {% endwith %}
+                <a href="{% url 'course_detail' course.slug %}" class="button secondary">View course</a>
+                {% if user.is_authenticated and user.is_student %}
+                    <a href="{% url 'apply_course' course.slug %}" class="button primary">Apply</a>
+                {% elif not user.is_authenticated %}
+                    <a href="{% url 'login' %}?next={% url 'apply_course' course.slug %}" class="button primary">Apply</a>
+                {% endif %}
+            </article>
+        {% empty %}
+            <p>Approved classes will appear here when scheduled.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section id="about-skillora" class="section container about-section">
+    <div class="about-image-panel">
+        <div class="about-photo-frame approved-photo-frame">
+            <img class="about-photo approved-college-photo" src="{% static 'core/srcw-approved-classroom.png' %}" alt="A student presenting a lesson in a college classroom" width="1024" height="768" loading="lazy">
+            <span class="photo-credit">College classroom</span>
+        </div>
+    </div>
+    <div class="about-copy">
+        <span class="eyebrow">About Skillora</span>
+        <h2>Learning Beyond the Classroom.</h2>
+        <p>Skillora helps students learn new skills beyond their regular syllabus. Students can explore department-wise courses, attend practical online or offline classes, improve their knowledge, and receive certificates after successful completion.</p>
+        <a href="{% url 'marketplace' %}" class="button primary">Explore learning</a>
+    </div>
+</section>
+
+<section class="section muted-section" id="students">
+    <div class="container">
+        <div class="section-header">
+            <div><span class="eyebrow">Illustrative demo content</span><h2>Sample student records</h2></div>
+        </div>
+        <p>These sample records are provided for demonstration only. They are not live enrollments. Avatar illustrations are not photographs of real students.</p>
+        <div class="student-card-grid">
+            {% for name, department, course, timing, initials in sample_students %}
+                <article class="student-profile-card">
+                    <div class="student-avatar avatar-{{ forloop.counter }}" aria-label="Illustrated placeholder avatar for {{ name }}">{{ initials }}</div>
+                    <span class="tag">Sample student record</span>
+                    <h3>{{ name }}</h3>
+                    <p><strong>Department:</strong> {{ department }}</p>
+                    <p><strong>Course:</strong> {{ course }}</p>
+                    <p><strong>Class:</strong> {{ timing }}</p>
+                </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section container">
+    <div class="section-header">
+        <h2>How Skillora Works</h2>
+    </div>
+    <div class="info-grid three-col">
+        <div class="info-box reveal-card">
+            <div class="step-badge">01</div>
+            <h3>Discover a Skill</h3>
+            <p>Browse courses, trending skills, and student mentors that align with your learning goals.</p>
+        </div>
+        <div class="info-box reveal-card">
+            <div class="step-badge">02</div>
+            <h3>Connect with a Mentor</h3>
+            <p>Book sessions, learn from student instructors, and participate in active campus and virtual learning communities.</p>
+        </div>
+        <div class="info-box reveal-card">
+            <div class="step-badge">03</div>
+            <h3>Learn and Earn a Certificate</h3>
+            <p>Complete a course, meet its attendance requirements, and request an authorized review. Certificates are Skillora learning records, not official college credentials unless separately authorized.</p>
+        </div>
+    </div>
+</section>
+
+<section class="section container">
+    <div class="section-header">
+        <h2>Featured courses</h2>
+        <a href="{% url 'marketplace' %}">View all</a>
+    </div>
+    <div class="card-grid three-col">
+        {% for course in featured_courses %}
+        <article class="course-card reveal-card">
+            <span class="badge">{{ course.mode|title }}</span>
+            <h3>{{ course.title }}</h3>
+            <p class="meta">Instructor: {{ course.instructor.get_full_name|default:course.instructor.username }}</p>
+            <p>{{ course.description|truncatewords:18 }}</p>
+            <div class="card-footer">
+                <span>{{ course.duration_weeks }} weeks · {{ course.available_slots }} seats</span>
+                <a href="{% url 'course_detail' course.slug %}">View details</a>
+            </div>
+        </article>
+        {% empty %}
+        <p>No courses yet. Sign in as an instructor to create the first learning experience.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="section muted-section">
+    <div class="container">
+        <div class="section-header">
+            <h2>Trending skills</h2>
+        </div>
+        <div class="pill-grid">
+            {% for category in categories %}
+                <span class="skill-pill">{{ category.category }} ({{ category.count }})</span>
+            {% empty %}
+                <span class="skill-pill">Programming</span>
+                <span class="skill-pill">Web Development</span>
+                <span class="skill-pill">UI/UX Design</span>
+                <span class="skill-pill">Data Analytics</span>
+                <span class="skill-pill">Communication</span>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section container">
+    <div class="section-header">
+        <h2>Online and Offline Learning</h2>
+    </div>
+    <div class="two-up-grid">
+        <div class="mode-card online-mode">
+            <div class="mode-content">
+                <span class="mode-tag">Online learning</span>
+                <h3>Flexible digital learning</h3>
+                <p>Join live workshops, guided tutorials, and skill sessions from anywhere with course resources and mentor support.</p>
+                <a href="{% url 'marketplace' %}?mode=online" class="button primary">Explore online courses</a>
+            </div>
+        </div>
+        <div class="mode-card offline-mode">
+            <div class="mode-content">
+                <span class="mode-tag">Offline learning</span>
+                <h3>Campus-based mentorship</h3>
+                <p>Take part in classroom learning, practical workshops, student-led labs, and collaborative skill-building sessions.</p>
+                <a href="{% url 'marketplace' %}?mode=offline" class="button primary">Explore offline courses</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section container">
+    <div class="certificate-panel">
+        <div class="certificate-copy">
+            <span class="eyebrow">Certificate showcase</span>
+            <h2>Every Skill You Learn Deserves Recognition.</h2>
+            <p>Students can complete guided learning paths, request verification, and receive a college-authorized skill certificate after faculty approval.</p>
+            <a href="{% url 'register' %}" class="button primary">View certificate process</a>
+        </div>
+        <div class="certificate-card">
+            <div class="certificate-topbar">SKILLORA</div>
+            <div class="certificate-body">
+                <p class="certificate-subtext">Illustrative certificate layout</p>
+                <h3>Student name</h3>
+                <p>has successfully completed the course</p>
+                <strong>Course title</strong>
+                <div class="certificate-meta">
+                    <span>Issued only after faculty authorization</span>
+                    <span>Unique ID assigned on approval</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section container">
+    <div class="section-header">
+        <h2>Why students choose Skillora</h2>
+    </div>
+    <div class="benefit-grid">
+        <div class="benefit-card reveal-card">
+            <strong>Learn useful new skills</strong>
+            <p>Explore subjects that complement your regular syllabus.</p>
+        </div>
+        <div class="benefit-card reveal-card">
+            <strong>Attend practical classes</strong>
+            <p>Choose online or offline batches with a clear class time.</p>
+        </div>
+        <div class="benefit-card reveal-card">
+            <strong>Improve career opportunities</strong>
+            <p>Build knowledge and confidence through focused practice.</p>
+        </div>
+        <div class="benefit-card reveal-card">
+            <strong>Learn from teachers</strong>
+            <p>Join classes led by approved teachers and faculty.</p>
+        </div>
+        <div class="benefit-card reveal-card">
+            <strong>Track attendance and progress</strong>
+            <p>See your application status, attendance, and course completion.</p>
+        </div>
+        <div class="benefit-card reveal-card">
+            <strong>Earn completion certificates</strong>
+            <p>Request a Skillora certificate after verified completion and authorized review.</p>
+        </div>
+        <div class="benefit-card reveal-card">
+            <strong>Connect across departments</strong>
+            <p>Learn alongside students from different departments.</p>
+        </div>
+    </div>
+</section>
+
+<section class="section container" id="teachers">
+    <div class="two-up-grid">
+        <div class="panel">
+            <span class="eyebrow">Teacher workspace</span>
+            <h2>Manage classes with clarity</h2>
+            <p>Approved teachers can create course batches, review student applications, and see accepted learners by department and class time.</p>
+            <p>Attendance is saved by class date. Teachers can review each learner's attendance percentage and verify completion separately.</p>
+            {% if user.is_authenticated and user.is_teacher %}
+                <a class="button primary" href="{% url 'teacher_dashboard' %}">Open teacher dashboard</a>
+            {% elif user.is_authenticated and user.is_instructor %}
+                <a class="button primary" href="{% url 'teacher_pending' %}">Check teacher application</a>
+            {% else %}
+                <a class="button primary" href="{% url 'register' %}">Apply to teach</a>
+            {% endif %}
+        </div>
+        <div class="panel">
+            <span class="eyebrow">Clear review steps</span>
+            <h2>Applications are never auto-accepted</h2>
+            <p>Every application begins as pending. Only the assigned teacher or a college administrator can accept or reject it. A batch can have no more than 10 accepted students.</p>
+            <a class="button secondary" href="{% url 'departments' %}">Browse departments</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

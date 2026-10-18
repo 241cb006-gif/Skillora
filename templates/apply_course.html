@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Apply for {{ course.title }} | Skillora{% endblock %}
+
+{% block content %}
+<section class="container auth-wrap">
+    <div class="auth-card wide-form">
+        <span class="eyebrow">{{ course.department.name }}</span>
+        <h1>Apply for {{ course.title }}</h1>
+        <p>Your application stays pending until the assigned teacher or college administrator reviews it. Each batch accepts up to 10 students.</p>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="button primary full-width" type="submit">Submit application</button>
+        </form>
+        <h2 class="mt-4">Batch seat availability</h2>
+        {% for batch in batches %}
+            <div class="list-item">
+                <div>
+                    <strong>{{ batch.name }} · {{ batch.start_date|date:"M j, Y" }}</strong>
+                    <p>{{ batch.schedule }} · {{ batch.get_mode_display }}</p>
+                </div>
+                {% if batch.is_full %}
+                    <span class="tag">Full</span>
+                {% else %}
+                    <span class="tag success">{{ batch.available_seats }} out of 10 seats available</span>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <a href="{% url 'course_detail' course.slug %}" class="button secondary mt-3">Back to course</a>
+    </div>
+</section>
+{% endblock %}

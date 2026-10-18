@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Application | Skillora{% endblock %}
+
+{% block content %}
+<section class="container spaced-section">
+    <div class="panel">
+        <span class="eyebrow">Teacher application</span>
+        <h1>Your application is awaiting college approval</h1>
+        <p>Course creation and teacher tools will be available after approval. While you wait, you can browse approved courses and update your profile.</p>
+        <div class="button-row">
+            <a href="{% url 'marketplace' %}" class="button primary">Browse courses</a>
+            <a href="{% url 'profile' %}" class="button secondary">Update profile</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

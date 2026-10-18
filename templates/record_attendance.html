@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Record Attendance | Skillora{% endblock %}
+
+{% block content %}
+<section class="container spaced-section">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">Attendance tracking</span>
+            <h1>{{ course.title }}</h1>
+        </div>
+    </div>
+
+    <div class="panel">
+        <form method="post">
+            {% csrf_token %}
+            <label for="session_date">Session date</label>
+            <input type="date" name="session_date" id="session_date" required>
+
+            <table class="attendance-table" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding: 10px;">Student</th>
+                        <th style="text-align: left; padding: 10px;">Present</th>
+                        <th style="text-align: left; padding: 10px;">Verify completion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enrollment in enrollments %}
+                    <tr>
+                        <td style="padding: 10px; border-top: 1px solid #e7e9f5;">{{ enrollment.student.get_full_name|default:enrollment.student.username }}</td>
+                        <td style="padding: 10px; border-top: 1px solid #e7e9f5;">
+                            <input type="checkbox" name="present_{{ enrollment.student_id }}">
+                        </td>
+                        <td style="padding: 10px; border-top: 1px solid #e7e9f5;">
+                            {% if not enrollment.completed %}
+                                <input type="checkbox" name="complete_{{ enrollment.student_id }}">
+                            {% else %}
+                                <span class="tag">Verified</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" style="padding: 10px;">No students enrolled yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <button type="submit" class="button primary" style="margin-top: 20px;">Save attendance</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

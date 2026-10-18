@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Batch | Skillora{% endblock %}
+
+{% block content %}
+<section class="container auth-wrap">
+    <div class="auth-card wide-form">
+        <h1>Add a class time</h1>
+        <p>{{ course.title }} · Every batch is limited to 10 accepted students.</p>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="button primary full-width" type="submit">Save batch</button>
+        </form>
+        <a href="{% url 'teacher_dashboard' %}" class="button secondary mt-3">Back to dashboard</a>
+    </div>
+</section>
+{% endblock %}
